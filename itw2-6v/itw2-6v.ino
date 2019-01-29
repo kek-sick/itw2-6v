@@ -1,0 +1,140 @@
+/*
+ Name:		itw2_6v.ino
+ Created:	24.01.2019 20:47:13
+ Author:	Ilya
+*/
+#define MESH1 0
+#define MESH2 1
+#define HIGH_VOLTAGE A1
+#define FILAMENT A2
+#define LIGHT_SENSOR A3
+// the setup function runs once when you press reset or power the board
+
+void lamp1();
+void lamp2();
+void show_s(byte, byte);
+//void show_r_strg(byte*);
+
+unsigned long time = 0, fst_tap_time = 0, show_time = 0, mills_ftt = 0;
+byte tap_count = 0, a = 0,b = 0;
+bool first_tap_btn_flag = false,
+	second_tap_btn_flag = false,
+	allow_secon_tap = false;
+//byte ty_pidor[] = {10,13,16,11,1,12,0,15};
+//byte hyi[] = {17,13,1,16};
+
+bool symb[][8] = {
+	{0,1,1,1,0,1,1,1}, // 0
+	{0,1,1,0,0,0,0,0}, // 1
+	{0,0,1,1,1,0,1,1}, // 2
+	{0,1,1,1,1,0,0,1}, // 3
+	{0,1,1,0,1,1,0,0}, // 4
+	{0,1,0,1,1,1,0,1}, // 5
+	{0,1,0,1,1,1,1,1}, // 6
+	{0,1,1,1,0,0,0,0}, // 7
+	{0,1,1,1,1,1,1,1}, // 8
+	{0,1,1,1,1,1,0,1}, // 9
+	{0,0,0,0,1,1,1,1}, // t  10
+	{0,0,1,1,1,1,1,0}, // p  11
+	{0,1,1,0,1,0,1,1}, // d  12
+	{0,1,1,0,1,1,0,1}, // y  13
+	{0,1,0,0,1,0,1,1}, // o  14
+	{0,0,0,0,1,0,1,0}, // r  15
+	{0,0,0,0,0,0,0,0}, // space  16
+	{0,1,1,0,1,1,1,0}};// H  17
+
+void setup() {
+	pinMode(MESH1, OUTPUT);
+	pinMode(MESH2, OUTPUT);
+	pinMode(2, OUTPUT);
+	pinMode(3, OUTPUT);
+	pinMode(4, OUTPUT);
+	pinMode(5, OUTPUT);
+	pinMode(6, OUTPUT);
+	pinMode(7, OUTPUT);
+	pinMode(8, OUTPUT);
+	pinMode(9, OUTPUT);
+	pinMode(13, INPUT_PULLUP);
+	pinMode(HIGH_VOLTAGE, OUTPUT);
+	pinMode(FILAMENT, OUTPUT);
+	pinMode(LIGHT_SENSOR, INPUT);
+	
+	show_s(17, 1);    //say HI
+	time = millis();
+	//Serial.begin(9600);
+}
+
+// the loop function runs over and over again until power down or reset
+void loop() {
+	if (millis() - time >40)
+	{
+		time = millis();
+		a++;
+		if (a > 9) { a = 0; b++; }
+		if (b > 9)b = 0;	
+	}
+	show_s(b, a);
+
+	if (!digitalRead(13) && !first_tap_btn_flag)
+	{
+		first_tap_btn_flag = true;
+		fst_tap_time = millis();
+		show_time = fst_tap_time;
+		//digitalWrite(HIGH_VOLTAGE, HIGH);
+		//digitalWrite(FILAMENT, HIGH);
+	}
+	mills_ftt = millis() - fst_tap_time;
+	if (digitalRead(13) && millis() - show_time > 1500)
+	{
+		//digitalWrite(HIGH_VOLTAGE, LOW);
+		//digitalWrite(FILAMENT, LOW);
+	}
+	if (first_tap_btn_flag && digitalRead(13) && mills_ftt > 600)
+	{	
+		first_tap_btn_flag = false;
+		second_tap_btn_flag = false;
+	}
+	if (digitalRead(13) && !allow_secon_tap && first_tap_btn_flag && mills_ftt >350 && mills_ftt < 600)
+	{
+		allow_secon_tap = true;
+	}
+	if (!second_tap_btn_flag && !digitalRead(13) && allow_secon_tap && mills_ftt > 350)
+	{
+		second_tap_btn_flag = true;
+		allow_secon_tap = false;
+	}
+
+	//show_r_strg(hyi);
+}
+
+void lamp1() {
+	digitalWrite(MESH2, HIGH);
+	digitalWrite(MESH1, LOW);
+}
+
+void lamp2() {
+	digitalWrite(MESH1, HIGH);
+	digitalWrite(MESH2, LOW);
+}
+
+void show_s(byte symbol_write_1, byte symbol_write_2) {
+	lamp1();
+	for (short i = 2; i < 10; i++){
+		digitalWrite(i, !symb[symbol_write_1][i - 2]);
+	}
+	delay(4);
+	lamp2();
+	for (short j = 2; j < 10; j++) {
+		digitalWrite(j, !symb[symbol_write_2][j - 2]);
+	}
+	delay(4);
+}
+
+/*void show_r_strg(byte* strg) {
+	for (byte i = 0; i <=sizeof(strg); i++){
+		time = millis();
+		while (millis()-time < 750){
+			show_s(strg[i], strg[i + 1]);
+		}
+	}
+}*/
