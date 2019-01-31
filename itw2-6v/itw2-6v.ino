@@ -17,9 +17,10 @@ void show_s(byte, byte);
 
 unsigned long time = 0, fst_tap_time = 0, show_time = 0, mills_ftt = 0;
 byte tap_count = 0, a = 0,b = 0;
-bool first_tap_btn_flag = false,
-	second_tap_btn_flag = false,
-	allow_secon_tap = false;
+bool first_tap_btn_flag = false,	//if one tap happened
+	second_tap_btn_flag = false,	//if two taps hepptned
+	allow_secon_tap = false,		//if TRUE then second tap can be detected
+	ignition = false;				//TRUE when power lines are active
 //byte ty_pidor[] = {10,13,16,11,1,12,0,15};
 //byte hyi[] = {17,13,1,16};
 
@@ -75,35 +76,49 @@ void loop() {
 	}
 	show_s(b, a);
 
+	//first tap detection
 	if (!digitalRead(13) && !first_tap_btn_flag)
 	{
 		first_tap_btn_flag = true;
 		fst_tap_time = millis();
 		show_time = fst_tap_time;
-		//digitalWrite(HIGH_VOLTAGE, HIGH);
-		//digitalWrite(FILAMENT, HIGH);
 	}
 	mills_ftt = millis() - fst_tap_time;
+
+	//костыль вырубающий зажиганние, пока нет функции отображения
 	if (digitalRead(13) && millis() - show_time > 1500)
 	{
 		//digitalWrite(HIGH_VOLTAGE, LOW);
 		//digitalWrite(FILAMENT, LOW);
 	}
-	if (first_tap_btn_flag && digitalRead(13) && mills_ftt > 600)
+
+	//обнулятор тапов если второго не случилось (будет убран после нормальных функций отображения)
+	if (first_tap_btn_flag && digitalRead(13) && mills_ftt > 600)  //todo убрать digitalRead чтобы.. ноо это не точно
 	{	
 		first_tap_btn_flag = false;
 		second_tap_btn_flag = false;
 	}
+
+	//allowing to detect secont tap
 	if (digitalRead(13) && !allow_secon_tap && first_tap_btn_flag && mills_ftt >350 && mills_ftt < 600)
 	{
 		allow_secon_tap = true;
 	}
+
+	//second tap detection
 	if (!second_tap_btn_flag && !digitalRead(13) && allow_secon_tap && mills_ftt > 350)
 	{
 		second_tap_btn_flag = true;
 		allow_secon_tap = false;
 	}
 
+	//включение силовых линий
+	if (first_tap_btn_flag && !ignition)
+	{
+		ignition;
+		digitalWrite(HIGH_VOLTAGE, HIGH);
+		digitalWrite(FILAMENT, HIGH);
+	}
 	//show_r_strg(hyi);
 }
 
