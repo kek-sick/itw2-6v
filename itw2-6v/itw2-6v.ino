@@ -23,8 +23,8 @@ bool first_tap_btn_flag = false,	//if one tap happened
 	second_tap_btn_flag = false,	//if two taps hepptned
 	allow_secon_tap = false,		//if TRUE then second tap can be detected
 	ignition = false,				//TRUE when power lines are active
-	time_showing = false,			//TRUE when time showing func is operating
-	data_showing = false;			//TRUE when data showing func is operating
+	has_shown = false;				//TRUE when showing func has done
+	
 //byte ty_pidor[] = {10,13,16,11,1,12,0,15};
 //byte hyi[] = {17,13,1,16};
 
@@ -94,20 +94,6 @@ void loop() {
 	}
 	mills_ftt = millis() - fst_tap_time;
 
-	//костыль вырубающий зажиганние, пока нет функции отображени€
-	//if (digitalRead(13) && millis() - show_time > 1600)
-	//{
-	//	//digitalWrite(HIGH_VOLTAGE, LOW);
-	//	//digitalWrite(FILAMENT, LOW);
-	//}
-
-	//обнул€тор тапов если второго не случилось (будет убран после нормальных функций отображени€)
-	//if (first_tap_btn_flag && digitalRead(13) && mills_ftt > 600)  //todo убрать digitalRead чтобы.. ноо это не точно
-	//{	
-	//	first_tap_btn_flag = false;
-	//	second_tap_btn_flag = false;
-	//}
-
 	//allowing to detect secont tap
 	if (digitalRead(13) && !allow_secon_tap && first_tap_btn_flag && mills_ftt >350 && mills_ftt < 600)
 	{
@@ -129,12 +115,7 @@ void loop() {
 		digitalWrite(FILAMENT, HIGH);
 	}
 
-	if (first_tap_btn_flag && !second_tap_btn_flag  && !time_showing)
-	{
-		time_showing = true;
-	}
-
-	if (time_showing && mills_ftt > 600)
+	if (first_tap_btn_flag && !second_tap_btn_flag  && !has_shown && mills_ftt > 600)
 	{
 		a = clock.Hours;
 		while (millis() - show_time < 1500)
@@ -153,13 +134,14 @@ void loop() {
 		}
 		show_s(16, 16);
 		first_tap_btn_flag = false;
-		//second_tap_btn_flag = false;
-		time_showing = false;
+		has_shown = true;
 		allow_secon_tap = false;
 	}
 
-	if (!data_showing && !time_showing && ignition)
+
+	if (has_shown && ignition)
 	{
+		has_shown = false;
 		ignition = false;
 		digitalWrite(HIGH_VOLTAGE, LOW);
 		digitalWrite(FILAMENT, LOW);
