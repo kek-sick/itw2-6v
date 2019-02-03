@@ -47,8 +47,9 @@ bool symb[][8] = {
 	{0,0,0,0,1,0,1,0}, // r  15
 	{0,0,0,0,0,0,0,0}, // space  16
 	{0,1,1,0,1,1,1,0}, // H  17
-	{1,0,0,0,0,0,0,0}};// dots 18
-
+	{1,0,0,0,0,0,0,0}, // dots 18
+	{0,0,1,1,1,1,0,0}, // o (upper) 19
+};
 // the setup function runs once when you press reset or power the board
 void setup() {
 	pinMode(MESH1, OUTPUT);
@@ -84,13 +85,16 @@ void loop() {
 		if (b > 9)b = 0;	
 	}
 	show_s(b, a);*/
-
+	/*Serial.print(first_tap_btn_flag);
+	Serial.print(allow_secon_tap);
+	Serial.println(second_tap_btn_flag);*/
 	//first tap detection
 	if (!digitalRead(13) && !first_tap_btn_flag)
 	{
 		first_tap_btn_flag = true;
 		fst_tap_time = millis();
 		show_time = fst_tap_time;
+		b = GetTemp();
 	}
 	mills_ftt = millis() - fst_tap_time;
 
@@ -114,7 +118,7 @@ void loop() {
 		digitalWrite(HIGH_VOLTAGE, HIGH);
 		digitalWrite(FILAMENT, HIGH);
 	}
-
+	//showing time
 	if (first_tap_btn_flag && !second_tap_btn_flag  && !has_shown && mills_ftt > 600)
 	{
 		a = clock.Hours;
@@ -137,7 +141,23 @@ void loop() {
 		has_shown = true;
 		allow_secon_tap = false;
 	}
-
+	//showing data
+	if (first_tap_btn_flag && second_tap_btn_flag && !has_shown && mills_ftt > 600)
+	{
+		while (millis() - show_time < 1500)
+		{
+			show_s(10, 19);
+		}
+		while (millis() - show_time < 2800)
+		{
+			show_s(byte(b / 10), byte(b % 10));
+		}
+		show_s(16, 16);
+		first_tap_btn_flag = false;
+		has_shown = true;
+		allow_secon_tap = false;
+		second_tap_btn_flag = false;
+	}
 
 	if (has_shown && ignition)
 	{
@@ -180,3 +200,21 @@ void show_s(byte symbol_write_1, byte symbol_write_2) {
 		}
 	}
 }*/
+
+byte GetTemp(void)
+{
+		unsigned int wADC;
+		double t;
+		ADMUX = (_BV(REFS1) | _BV(REFS0) | _BV(MUX3));
+		ADCSRA |= _BV(ADEN);  // enable the ADC
+		delay(20);            // wait for voltages to become stable.
+		ADCSRA |= _BV(ADSC);  // Start the ADC
+		// Detect end-of-conversion
+		while (bit_is_set(ADCSRA, ADSC));
+		// Reading register "ADCW" takes care of how to read ADCL and ADCH.
+		wADC = ADCW;
+		// The offset of 324.31 could be wrong. It is just an indication.
+		t = (wADC - 324.31) / 1.22;
+		// The returned temperature is in degrees Celsius.
+		return (byte(t));
+}
