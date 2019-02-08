@@ -72,11 +72,11 @@ void setup() {
 	pinMode(13, INPUT_PULLUP);
 	pinMode(HIGH_VOLTAGE, OUTPUT);
 	pinMode(FILAMENT, OUTPUT);
-	pinMode(LIGHT_SENSOR, INPUT);
+	pinMode(LIGHT_SENSOR, INPUT);  
 	
 	clock.begin();
 	//clock.settime(0,5, 2, 1, 2, 19, 5);
-	show_s(16, 16);    //off all segments
+	//show_s(16, 16);    //off all segments
 	//time = millis();
 	//Serial.begin(9600);
 	//Serial.println(clock.minutes);
@@ -95,7 +95,7 @@ void loop() {
 	/*Serial.print(first_tap_btn_flag);
 	Serial.print(allow_secon_tap);
 	Serial.println(second_tap_btn_flag);*/
-	if (mills_ftt < WF_SECOND_TAP)
+	if (mills_ftt < WF_SECOND_TAP)  //показываем анимацию
 	{
 		if (mills_ftt % 10 < 5)
 		{
@@ -183,6 +183,10 @@ void loop() {
 		ignition = false;
 		digitalWrite(HIGH_VOLTAGE, LOW);
 		digitalWrite(FILAMENT, LOW);
+		for (byte i = 0; i < 10; i++) //вырубаем все выводы, чтобы не тратить энергию
+		{
+			digitalWrite(i, LOW);
+		}
 	}
 	//show_r_strg(hyi);
 }
@@ -221,12 +225,12 @@ void show_s(byte symbol_write_1, byte symbol_write_2) {
 	for (short i = 2; i < 10; i++){
 		digitalWrite(i, !symb[symbol_write_1][i - 2]);
 	}
-	delay(4);
+	delay(5);
 	lamp2();
 	for (short j = 2; j < 10; j++) {
 		digitalWrite(j, !symb[symbol_write_2][j - 2]);
 	}
-	delay(4);
+	delay(5);
 }
 
 /*void show_r_strg(byte* strg) {
