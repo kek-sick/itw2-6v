@@ -14,12 +14,12 @@
 
 iarduino_RTC clock(RTC_DS1302, 10, 12, 11);
 
-void Lamp();
-void show_s(byte, byte);
+void Lamp(byte);
+void Show_symb(byte, byte);
 //void show_r_strg(byte*);
 
 unsigned long time = 0, fst_tap_time = 0, GetTemp_time = 0, mills_ftt = 0;
-byte a = 0,b = 0;
+byte a = 0,temperature = 0;
 bool first_tap_btn_flag = false,	//if one tap happened
 	second_tap_btn_flag = false,	//if two taps hepptned
 	allow_secon_tap = false,		//if TRUE then second tap can be detected
@@ -98,20 +98,21 @@ void loop() {
 	{
 		if (mills_ftt % 10 < 5)
 		{
-			show_anim(mills_ftt / 60, 1, 0);
+			Show_anim(mills_ftt / 60, 1, 0);
 		}
 		else 
 		{
-			show_anim(mills_ftt / 60, 2,0);
+			Show_anim(mills_ftt / 60, 2, 0);
 		}
 	}
+
 	//first tap detection
 	if (!digitalRead(13) && !first_tap_btn_flag)
 	{
 		first_tap_btn_flag = true;
 		fst_tap_time = millis();
 		//show_time = fst_tap_time;
-		b = GetTemp();
+		temperature = GetTemp();
 	}
 	mills_ftt = millis() - fst_tap_time;
 
@@ -138,22 +139,7 @@ void loop() {
 	//showing time
 	if (first_tap_btn_flag && !second_tap_btn_flag  && !has_shown && mills_ftt > WF_SECOND_TAP)
 	{
-		a = clock.Hours;
-		while (millis() - fst_tap_time < 1500)
-		{
-			show_s(byte(a/10),byte(a%10));
-		}
-		show_s(16, 16);
-		digitalWrite(2, LOW);
-		digitalWrite(0, LOW);
-		digitalWrite(1, LOW);
-		a = clock.minutes;
-		delay(300);
-		while (millis() - fst_tap_time < 2800)
-		{
-			show_s(byte(a / 10), byte(a % 10));
-		}
-		show_s(16, 16);
+		Show_time();
 		first_tap_btn_flag = false;
 		has_shown = true;
 		allow_secon_tap = false;
@@ -161,21 +147,13 @@ void loop() {
 	//showing data
 	if (first_tap_btn_flag && second_tap_btn_flag && !has_shown && mills_ftt > WF_SECOND_TAP)
 	{
-		while (millis() - fst_tap_time < 1500)
-		{
-			show_s(10, 19);
-		}
-		while (millis() - fst_tap_time < 2800)
-		{
-			show_s(byte(b / 10), byte(b % 10));
-		}
-		show_s(16, 16);
+		Show_temperature();
 		first_tap_btn_flag = false;
 		has_shown = true;
 		allow_secon_tap = false;
 		second_tap_btn_flag = false;
 	}
-
+	//turning off power
 	if (has_shown && ignition)
 	{
 		has_shown = false;
@@ -203,10 +181,47 @@ void Lamp(byte lamp) {
 	}
 }
 
-void show_anim(byte frame, byte lamp, byte anim) {
+void Show_temperature() {
+	byte tt1, tt2;
+	tt1 = temperature / 10;
+	tt2 = temperature % 10;
+	while (millis() - fst_tap_time < 1500)
+	{
+		Show_symb(10, 19);
+	}
+	while (millis() - fst_tap_time < 2800)
+	{
+		Show_symb(tt1, tt2);
+	}
+	Show_symb(16, 16);
+}
+
+void Show_time() {
+	byte  tt1,tt2;
+	tt1 = clock.Hours / 10;
+	tt2 = clock.Hours % 10;
+	while (millis() - fst_tap_time < 1500)
+	{
+		Show_symb(tt1, tt2);
+	}
+	Show_symb(16, 16);
+	digitalWrite(2, LOW);
+	digitalWrite(0, LOW);
+	digitalWrite(1, LOW);
+	tt1 = clock.minutes / 10;
+	tt2 = clock.minutes % 10;
+	delay(300);
+	while (millis() - fst_tap_time < 2800)
+	{
+		Show_symb(tt1, tt2);
+	}
+	Show_symb(16, 16);
+}
+
+void Show_anim(byte frame, byte lamp, byte anim) {
 	byte seg[3];
 	Lamp(lamp);
-	switch (anim)
+	switch (anim) //TODO other animations
 	{
 	default:
 		for (size_t i = 0; i < 3; i++)seg[i] = animation[lamp - 1][frame + i];  //обозначаем нужные сегменты в этом кадре
@@ -221,7 +236,7 @@ void show_anim(byte frame, byte lamp, byte anim) {
 	if(seg[0]!=0){digitalWrite(seg[0]+1,LOW);}
 }
 
-void show_s(byte symbol_write_1, byte symbol_write_2) {
+void Show_symb(byte symbol_write_1, byte symbol_write_2) {
 	Lamp(1);
 	for (short i = 2; i < 10; i++){
 		digitalWrite(i, !symb[symbol_write_1][i - 2]);
