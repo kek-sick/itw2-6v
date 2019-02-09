@@ -14,8 +14,7 @@
 
 iarduino_RTC clock(RTC_DS1302, 10, 12, 11);
 
-void lamp1();
-void lamp2();
+void Lamp();
 void show_s(byte, byte);
 //void show_r_strg(byte*);
 
@@ -99,11 +98,11 @@ void loop() {
 	{
 		if (mills_ftt % 10 < 5)
 		{
-			show_anim(mills_ftt / 60, 1);
+			show_anim(mills_ftt / 60, 1, 0);
 		}
 		else 
 		{
-			show_anim(mills_ftt / 60, 2);
+			show_anim(mills_ftt / 60, 2,0);
 		}
 	}
 	//first tap detection
@@ -191,26 +190,28 @@ void loop() {
 	//show_r_strg(hyi);
 }
 
-void lamp1() {
-	digitalWrite(MESH2, HIGH);
-	digitalWrite(MESH1, LOW);
-}
-
-void lamp2() {
-	digitalWrite(MESH1, HIGH);
-	digitalWrite(MESH2, LOW);
-}
-
-void show_anim(byte frame, byte lamp) {
-	byte seg[3];
-	if (lamp == 1) {
-		lamp1();
-	}
-	else
+void Lamp(byte lamp) {
+	if (lamp == 1)
 	{
-		lamp2();
+		digitalWrite(MESH2, HIGH);
+		digitalWrite(MESH1, LOW);
 	}
-	for (size_t i = 0; i < 3; i++)seg[i] = animation[lamp - 1][frame + i];  //обозначаем нужные сегменты в этом кадре
+	if (lamp==2)
+	{
+		digitalWrite(MESH1, HIGH);
+		digitalWrite(MESH2, LOW);
+	}
+}
+
+void show_anim(byte frame, byte lamp, byte anim) {
+	byte seg[3];
+	Lamp(lamp);
+	switch (anim)
+	{
+	default:
+		for (size_t i = 0; i < 3; i++)seg[i] = animation[lamp - 1][frame + i];  //обозначаем нужные сегменты в этом кадре
+		break;
+	}
 	for (byte i = 2; i < 10; i++)		// вырубаем все сегменты
 	{
 		digitalWrite(i,HIGH);
@@ -221,12 +222,12 @@ void show_anim(byte frame, byte lamp) {
 }
 
 void show_s(byte symbol_write_1, byte symbol_write_2) {
-	lamp1();
+	Lamp(1);
 	for (short i = 2; i < 10; i++){
 		digitalWrite(i, !symb[symbol_write_1][i - 2]);
 	}
 	delay(5);
-	lamp2();
+	Lamp(2);
 	for (short j = 2; j < 10; j++) {
 		digitalWrite(j, !symb[symbol_write_2][j - 2]);
 	}
