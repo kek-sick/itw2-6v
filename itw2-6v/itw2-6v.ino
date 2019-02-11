@@ -11,6 +11,7 @@
 #define LIGHT_SENSOR A3
 #define WF_SECOND_TAP 600   //время окончания ожидания второго тапа
 #define WF_DEBOUNCE 300		//время окончания ожидания дребезга переключателя
+#define LS_ENABLE 1			//Light Sensor Enable
 
 iarduino_RTC clock(RTC_DS1302, 10, 12, 11);
 
@@ -174,7 +175,7 @@ void Lamp(byte lamp) {
 		digitalWrite(MESH2, HIGH);
 		digitalWrite(MESH1, LOW);
 	}
-	if (lamp==2)
+	if (lamp == 2)
 	{
 		digitalWrite(MESH1, HIGH);
 		digitalWrite(MESH2, LOW);
@@ -241,12 +242,33 @@ void Show_symb(byte symbol_write_1, byte symbol_write_2) {
 	for (short i = 2; i < 10; i++){
 		digitalWrite(i, !symb[symbol_write_1][i - 2]);
 	}
-	delay(5);
+	if (LS_ENABLE) {
+		delayMicroseconds(50 * Brightness_conv());
+		digitalWrite(MESH1, HIGH);
+	}
+	else
+	{
+		delay(5);
+	}
 	Lamp(2);
 	for (short j = 2; j < 10; j++) {
 		digitalWrite(j, !symb[symbol_write_2][j - 2]);
 	}
-	delay(5);
+	if (LS_ENABLE) {
+		delayMicroseconds(50 * Brightness_conv());
+		digitalWrite(MESH2, HIGH);
+	}
+	else
+	{
+		delay(5);
+	}
+}
+
+short Brightness_conv() {
+	short active_time = analogRead(LIGHT_SENSOR);
+	if (active_time > 100)active_time = 100;
+	if (active_time < 100)active_time = 10;
+	return active_time;
 }
 
 /*void show_r_strg(byte* strg) {
