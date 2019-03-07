@@ -12,6 +12,7 @@
 #define WF_SECOND_TAP 600   //время окончания ожидания второго тапа
 #define WF_DEBOUNCE 300		//время окончания ожидания дребезга переключателя
 #define LS_ENABLE 1			//Light Sensor Enable
+#define ANIMATION 2
 
 iarduino_RTC clock(RTC_DS1302, 10, 12, 11);
 
@@ -52,10 +53,21 @@ bool symb[][8] = {
 	{1,0,0,0,0,0,0,0}, // dots 18
 	{0,0,1,1,1,1,0,0}, // o (upper) 19
 };
-
-byte animation[2][11] = {
+//anim 1
+byte animation1[2][11] = {
 	{0,0,3,5,4,2,6,8,7,1,0},
 	{0,0,7,5,8,6,2,4,3,1,0}
+};
+
+//anim 2
+byte animation2[2][11] = {
+	{0,0,3,4,6,5,2,8,7,0,0},
+	{0,0,7,8,2,5,6,4,3,0,0}
+};
+
+byte animation3[2][11] = {
+	{0,0,3,2,4,5,8,6,7,0,0},
+	{0,0,7,6,8,5,4,2,3,0,0}
 };
 // the setup function runs once when you press reset or power the board
 void setup() {
@@ -99,11 +111,11 @@ void loop() {
 	{
 		if (mills_ftt % 10 < 5)
 		{
-			Show_anim(mills_ftt / 60, 1, 0);
+			Show_anim(mills_ftt / 60, 1, ANIMATION);
 		}
 		else 
 		{
-			Show_anim(mills_ftt / 60, 2, 0);
+			Show_anim(mills_ftt / 60, 2, ANIMATION);
 		}
 	}
 
@@ -224,8 +236,14 @@ void Show_anim(byte frame, byte lamp, byte anim) {
 	Lamp(lamp);
 	switch (anim) //TODO other animations
 	{
+	case 2:
+		for (size_t i = 0; i < 3; i++)seg[i] = animation2[lamp - 1][frame + i];
+		break;
+	case 3:
+		for (size_t i = 0; i < 3; i++)seg[i] = animation3[lamp - 1][2*frame + i];
+		break;
 	default:
-		for (size_t i = 0; i < 3; i++)seg[i] = animation[lamp - 1][frame + i];  //обозначаем нужные сегменты в этом кадре
+		for (size_t i = 0; i < 3; i++)seg[i] = animation1[lamp - 1][frame + i];  //обозначаем нужные сегменты в этом кадре
 		break;
 	}
 	for (byte i = 2; i < 10; i++)		// вырубаем все сегменты
