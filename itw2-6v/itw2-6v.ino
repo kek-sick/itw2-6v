@@ -245,6 +245,7 @@ void Show_symb(byte symbol_write_1, byte symbol_write_2) {
 	if (LS_ENABLE) {
 		delayMicroseconds(50 * Brightness_conv());
 		digitalWrite(MESH1, HIGH);
+		delayMicroseconds(50 * (100 - Brightness_conv()));
 	}
 	else
 	{
@@ -257,18 +258,20 @@ void Show_symb(byte symbol_write_1, byte symbol_write_2) {
 	if (LS_ENABLE) {
 		delayMicroseconds(50 * Brightness_conv());
 		digitalWrite(MESH2, HIGH);
+		delayMicroseconds(50 * (100 - Brightness_conv()));
 	}
 	else
 	{
 		delay(5);
 	}
+	//Serial.println(Brightness_conv());
 }
 
 short Brightness_conv() {
 	short active_time = analogRead(LIGHT_SENSOR);
-	if (active_time > 100)active_time = 100;
-	if (active_time < 100)active_time = 10;
-	return active_time;
+	if (active_time > 120)return 100;
+	if (active_time < 50)return 10;
+	return (active_time-40)*1.2;
 }
 
 /*void show_r_strg(byte* strg) {
