@@ -9,6 +9,7 @@
 #define HIGH_VOLTAGE A3
 #define FILAMENT A2
 #define LIGHT_SENSOR A7
+#define MERCURY 2			
 #define WF_SECOND_TAP 600   //время окончания ожидания второго тапа
 #define WF_DEBOUNCE 300		//время окончания ожидания дребезга переключателя
 #define LS_ENABLE 1			//Light Sensor Enable
@@ -32,26 +33,26 @@ bool first_tap_btn_flag = false,	//if one tap happened
 //byte hyi[] = {17,13,1,16};
 
 bool symb[][8] = {
-	{0,1,1,1,0,1,1,1}, // 0
-	{0,1,1,0,0,0,0,0}, // 1
-	{0,0,1,1,1,0,1,1}, // 2
-	{0,1,1,1,1,0,0,1}, // 3
-	{0,1,1,0,1,1,0,0}, // 4
-	{0,1,0,1,1,1,0,1}, // 5
-	{0,1,0,1,1,1,1,1}, // 6
-	{0,1,1,1,0,0,0,0}, // 7
-	{0,1,1,1,1,1,1,1}, // 8
-	{0,1,1,1,1,1,0,1}, // 9
-	{0,0,0,0,1,1,1,1}, // t  10
-	{0,0,1,1,1,1,1,0}, // p  11
-	{0,1,1,0,1,0,1,1}, // d  12
-	{0,1,1,0,1,1,0,1}, // y  13
-	{0,1,0,0,1,0,1,1}, // o  14
-	{0,0,0,0,1,0,1,0}, // r  15
-	{0,0,0,0,0,0,0,0}, // space  16
-	{0,1,1,0,1,1,1,0}, // H  17
-	{1,0,0,0,0,0,0,0}, // dots 18
-	{0,0,1,1,1,1,0,0} // o (upper) 19
+	{1,1,1,0,1,1,1}, // 0
+	{1,1,0,0,0,0,0}, // 1
+	{0,1,1,1,0,1,1}, // 2
+	{1,1,1,1,0,0,1}, // 3
+	{1,1,0,1,1,0,0}, // 4
+	{1,0,1,1,1,0,1}, // 5
+	{1,0,1,1,1,1,1}, // 6
+	{1,1,1,0,0,0,0}, // 7
+	{1,1,1,1,1,1,1}, // 8
+	{1,1,1,1,1,0,1}, // 9
+	{0,0,0,1,1,1,1}, // t  10
+	{0,1,1,1,1,1,0}, // p  11
+	{1,1,0,1,0,1,1}, // d  12
+	{1,1,0,1,1,0,1}, // y  13
+	{1,0,0,1,0,1,1}, // o  14
+	{0,0,0,1,0,1,0}, // r  15
+	{0,0,0,0,0,0,0}, // space  16
+	{1,1,0,1,1,1,0}, // H  17
+	//{0,0,0,0,0,0,0}, // dots 18
+	{0,1,1,1,1,0,0} // o (upper) 18
 };
 //anim 1
 byte animation1[2][11] = {
@@ -73,7 +74,7 @@ byte animation3[2][11] = {
 void setup() {
 	pinMode(MESH1, OUTPUT);
 	pinMode(MESH2, OUTPUT);
-	pinMode(2, OUTPUT);
+	pinMode(MERCURY, INPUT_PULLUP);
 	pinMode(3, OUTPUT);
 	pinMode(4, OUTPUT);
 	pinMode(5, OUTPUT);
@@ -81,15 +82,16 @@ void setup() {
 	pinMode(7, OUTPUT);
 	pinMode(8, OUTPUT);
 	pinMode(9, OUTPUT);
-	pinMode(13, INPUT_PULLUP);
+	pinMode(13, OUTPUT);			 //dots
 	pinMode(HIGH_VOLTAGE, OUTPUT);
 	pinMode(FILAMENT, OUTPUT);
 	pinMode(LIGHT_SENSOR, INPUT);
 
 	for (byte i = 0; i < 10; i++) //вырубаем все выводы, чтобы не тратить энергию
 	{
-		digitalWrite(i, LOW);
+		if (i != 2)digitalWrite(i, LOW);
 	}
+	digitalWrite(13, LOW);
 	//clock.begin();
 	//clock.settime(0, 57, 23, 1, 7, 19, 1);
 	//show_s(16, 16);    //off all segments
@@ -124,7 +126,7 @@ void loop() {
 	}
 
 	//first tap detection
-	if (!digitalRead(13) && !first_tap_btn_flag)
+	if (!digitalRead(MERCURY) && !first_tap_btn_flag)
 	{
 		first_tap_btn_flag = true;
 		fst_tap_time = millis();
@@ -134,13 +136,13 @@ void loop() {
 	mills_ftt = millis() - fst_tap_time;
 
 	//allowing to detect secont tap
-	if (digitalRead(13) && !allow_secon_tap && first_tap_btn_flag && mills_ftt > WF_DEBOUNCE && mills_ftt < WF_SECOND_TAP)
+	if (digitalRead(MERCURY) && !allow_secon_tap && first_tap_btn_flag && mills_ftt > WF_DEBOUNCE && mills_ftt < WF_SECOND_TAP)
 	{
 		allow_secon_tap = true;
 	}
 
 	//second tap detection
-	if (!second_tap_btn_flag && !digitalRead(13) && allow_secon_tap/* && mills_ftt > 350*/)
+	if (!second_tap_btn_flag && !digitalRead(MERCURY) && allow_secon_tap/* && mills_ftt > 350*/)
 	{
 		second_tap_btn_flag = true;
 		allow_secon_tap = false;
@@ -179,8 +181,9 @@ void loop() {
 		digitalWrite(FILAMENT, LOW);
 		for (byte i = 0; i < 10; i++) //вырубаем все выводы, чтобы не тратить энергию
 		{
-			digitalWrite(i, LOW);
+			if(i != 2)digitalWrite(i, LOW);
 		}
+		digitalWrite(13, LOW);
 	}
 	//show_r_strg(hyi);
 }
@@ -202,9 +205,10 @@ void Show_temperature() {
 	byte tt1, tt2;
 	tt1 = temperature / 10;
 	tt2 = temperature % 10;
+	Show_dots(0);
 	while (millis() - fst_tap_time < 1500)
 	{
-		Show_symb(10, 19);
+		Show_symb(10, 18);
 	}
 	while (millis() - fst_tap_time < 2800)
 	{
@@ -215,6 +219,7 @@ void Show_temperature() {
 
 void Show_time() {
 	clock.begin();
+	Show_dots(0);
 	byte  tt1,tt2;
 	tt1 = clock.Hours / 10;
 	tt2 = clock.Hours % 10;
@@ -223,12 +228,11 @@ void Show_time() {
 		Show_symb(tt1, tt2);
 	}
 	Show_symb(16, 16);
-	digitalWrite(2, LOW);
-	digitalWrite(0, LOW);
-	digitalWrite(1, LOW);
+	Show_dots(1);
 	tt1 = clock.minutes / 10;
 	tt2 = clock.minutes % 10;
 	delay(300);
+	Show_dots(0);
 	while (millis() - fst_tap_time < 2800)
 	{
 		Show_symb(tt1, tt2);
@@ -251,7 +255,7 @@ void Show_anim(byte frame, byte lamp, byte anim) {
 		for (size_t i = 0; i < 3; i++)seg[i] = animation1[lamp - 1][frame + i];  //обозначаем нужные сегменты в этом кадре
 		break;
 	}
-	for (byte i = 2; i < 10; i++)		// вырубаем все сегменты
+	for (byte i = 3; i < 10; i++)		// вырубаем все сегменты
 	{
 		digitalWrite(i,HIGH);
 	}
@@ -262,8 +266,8 @@ void Show_anim(byte frame, byte lamp, byte anim) {
 
 void Show_symb(byte symbol_write_1, byte symbol_write_2) {
 	Lamp(1);
-	for (short i = 2; i < 10; i++){
-		digitalWrite(i, !symb[symbol_write_1][i - 2]);
+	for (short i = 3; i < 10; i++){
+		digitalWrite(i, !symb[symbol_write_1][i - 3]);
 	}
 	if (LS_ENABLE) {
 		delayMicroseconds(50 * Brightness_conv());
@@ -275,8 +279,8 @@ void Show_symb(byte symbol_write_1, byte symbol_write_2) {
 		delay(5);
 	}
 	Lamp(2);
-	for (short j = 2; j < 10; j++) {
-		digitalWrite(j, !symb[symbol_write_2][j - 2]);
+	for (short j = 3; j < 10; j++) {
+		digitalWrite(j, !symb[symbol_write_2][j - 3]);
 	}
 	if (LS_ENABLE) {
 		delayMicroseconds(50 * Brightness_conv());
@@ -288,6 +292,13 @@ void Show_symb(byte symbol_write_1, byte symbol_write_2) {
 		delay(5);
 	}
 	//Serial.println(Brightness_conv());
+}
+
+void Show_dots(bool show){
+	
+	digitalWrite(13, !show);
+	digitalWrite(0, !show);
+	digitalWrite(1, !show);
 }
 
 short Brightness_conv() {
