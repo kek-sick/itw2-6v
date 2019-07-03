@@ -6,15 +6,15 @@
 #include <iarduino_RTC.h>
 #define MESH1 0
 #define MESH2 1
-#define HIGH_VOLTAGE A1
+#define HIGH_VOLTAGE A3
 #define FILAMENT A2
-#define LIGHT_SENSOR A3
+#define LIGHT_SENSOR A7
 #define WF_SECOND_TAP 600   //время окончания ожидания второго тапа
 #define WF_DEBOUNCE 300		//время окончания ожидания дребезга переключателя
 #define LS_ENABLE 1			//Light Sensor Enable
 #define ANIMATION 2
 
-iarduino_RTC clock(RTC_DS1302, 10, 12, 11);
+iarduino_RTC clock(RTC_DS1307);
 
 void Lamp(byte);
 void Show_symb(byte, byte);
@@ -51,7 +51,7 @@ bool symb[][8] = {
 	{0,0,0,0,0,0,0,0}, // space  16
 	{0,1,1,0,1,1,1,0}, // H  17
 	{1,0,0,0,0,0,0,0}, // dots 18
-	{0,0,1,1,1,1,0,0}, // o (upper) 19
+	{0,0,1,1,1,1,0,0} // o (upper) 19
 };
 //anim 1
 byte animation1[2][11] = {
@@ -84,10 +84,14 @@ void setup() {
 	pinMode(13, INPUT_PULLUP);
 	pinMode(HIGH_VOLTAGE, OUTPUT);
 	pinMode(FILAMENT, OUTPUT);
-	pinMode(LIGHT_SENSOR, INPUT);  
-	
-	clock.begin();
-	//clock.settime(0,5, 2, 1, 2, 19, 5);
+	pinMode(LIGHT_SENSOR, INPUT);
+
+	for (byte i = 0; i < 10; i++) //вырубаем все выводы, чтобы не тратить энергию
+	{
+		digitalWrite(i, LOW);
+	}
+	//clock.begin();
+	//clock.settime(0, 57, 23, 1, 7, 19, 1);
 	//show_s(16, 16);    //off all segments
 	//time = millis();
 	//Serial.begin(9600);
@@ -210,6 +214,7 @@ void Show_temperature() {
 }
 
 void Show_time() {
+	clock.begin();
 	byte  tt1,tt2;
 	tt1 = clock.Hours / 10;
 	tt2 = clock.Hours % 10;
@@ -288,7 +293,7 @@ void Show_symb(byte symbol_write_1, byte symbol_write_2) {
 short Brightness_conv() {
 	short active_time = analogRead(LIGHT_SENSOR);
 	if (active_time > 120)return 100;
-	if (active_time < 50)return 10;
+	if (active_time < 42)return 2;
 	return (active_time-40)*1.2;
 }
 
