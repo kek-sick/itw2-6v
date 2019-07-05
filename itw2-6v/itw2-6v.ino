@@ -8,6 +8,7 @@
 #define MESH2 1
 #define HIGH_VOLTAGE A3
 #define FILAMENT A2
+#define BTN_DETECT A1
 #define LIGHT_SENSOR A7
 #define MERCURY 2			
 #define WF_SECOND_TAP 600   //время окончания ожидания второго тапа
@@ -26,8 +27,11 @@ byte a = 0,temperature = 0;
 bool first_tap_btn_flag = false,	//if one tap happened
 	second_tap_btn_flag = false,	//if two taps hepptned
 	allow_secon_tap = false,		//if TRUE then second tap can be detected
+	mercury_btn_flag = false,		//TRUE if btn parcer detected high value
 	ignition = false,				//TRUE when power lines are active
 	has_shown = false;				//TRUE when showing func has done
+volatile short btn_type = 0;
+volatile bool btn_flag = false;
 	
 //byte ty_pidor[] = {10,13,16,11,1,12,0,15};
 //byte hyi[] = {17,13,1,16};
@@ -70,11 +74,34 @@ byte animation3[2][11] = {
 	{0,0,3,2,4,5,8,6,7,0,0},
 	{0,0,7,6,8,5,4,2,3,0,0}
 };
+
+void Btn_detect() {
+	btn_type = analogRead(BTN_DETECT);
+	if (btn_type > 600)
+	{
+		btn_flag = true;
+		//Serial.println(analogRead(BTN_DETECT));
+	}
+	else
+	{
+		btn_flag = false;
+	}
+}
+
+//void Btn_release() {
+//	if (btn_flag) 
+//	{
+//		btn_type = analogRead(BTN_DETECT);
+//		btn_flag = false;
+//	}
+//}
+
 // the setup function runs once when you press reset or power the board
 void setup() {
 	pinMode(MESH1, OUTPUT);
 	pinMode(MESH2, OUTPUT);
-	pinMode(MERCURY, INPUT_PULLUP);
+	pinMode(MERCURY, INPUT);
+	pinMode(BTN_DETECT, INPUT);
 	pinMode(3, OUTPUT);
 	pinMode(4, OUTPUT);
 	pinMode(5, OUTPUT);
@@ -86,6 +113,9 @@ void setup() {
 	pinMode(HIGH_VOLTAGE, OUTPUT);
 	pinMode(FILAMENT, OUTPUT);
 	pinMode(LIGHT_SENSOR, INPUT);
+
+	attachInterrupt(0, Btn_detect, CHANGE);
+	//attachInterrupt(0, Btn_release, FALLING);
 
 	for (byte i = 0; i < 10; i++) //вырубаем все выводы, чтобы не тратить энергию
 	{
@@ -113,6 +143,17 @@ void loop() {
 	/*Serial.print(first_tap_btn_flag);
 	Serial.print(allow_secon_tap);
 	Serial.println(second_tap_btn_flag);*/
+	
+	if (btn_flag)
+	{
+		//Serial.println(analogRead(BTN_DETECT));
+		if (btn_type > 630 && btn_type < 640)mercury_btn_flag = true;
+	}
+	else
+	{
+		mercury_btn_flag = false;
+	}
+
 	if (mills_ftt < WF_SECOND_TAP)  //показываем анимацию
 	{
 		if (mills_ftt % 10 < 5)
@@ -126,23 +167,25 @@ void loop() {
 	}
 
 	//first tap detection
-	if (!digitalRead(MERCURY) && !first_tap_btn_flag)
+	if (mercury_btn_flag && !first_tap_btn_flag)
 	{
 		first_tap_btn_flag = true;
 		fst_tap_time = millis();
 		//show_time = fst_tap_time;
 		temperature = GetTemp();
+		//interrupts();
+		//attachInterrupt(0, Btn_release, FALLING);
 	}
 	mills_ftt = millis() - fst_tap_time;
 
 	//allowing to detect secont tap
-	if (digitalRead(MERCURY) && !allow_secon_tap && first_tap_btn_flag && mills_ftt > WF_DEBOUNCE && mills_ftt < WF_SECOND_TAP)
+	if (!mercury_btn_flag && !allow_secon_tap && first_tap_btn_flag && mills_ftt > WF_DEBOUNCE && mills_ftt < WF_SECOND_TAP)
 	{
 		allow_secon_tap = true;
 	}
 
 	//second tap detection
-	if (!second_tap_btn_flag && !digitalRead(MERCURY) && allow_secon_tap/* && mills_ftt > 350*/)
+	if (!second_tap_btn_flag && mercury_btn_flag && allow_secon_tap/* && mills_ftt > 350*/)
 	{
 		second_tap_btn_flag = true;
 		allow_secon_tap = false;
@@ -185,7 +228,6 @@ void loop() {
 		}
 		digitalWrite(13, LOW);
 	}
-	//show_r_strg(hyi);
 }
 
 void Lamp(byte lamp) {
