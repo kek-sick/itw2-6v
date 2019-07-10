@@ -115,7 +115,6 @@ void setup() {
 	pinMode(LIGHT_SENSOR, INPUT);
 
 	attachInterrupt(0, Btn_detect, CHANGE);
-	//attachInterrupt(0, Btn_release, FALLING);
 
 	for (byte i = 0; i < 10; i++) //вырубаем все выводы, чтобы не тратить энергию
 	{
@@ -140,9 +139,6 @@ void loop() {
 		if (b > 9)b = 0;	
 	}
 	show_s(b, a);*/
-	/*Serial.print(first_tap_btn_flag);
-	Serial.print(allow_secon_tap);
-	Serial.println(second_tap_btn_flag);*/
 	
 	if (btn_flag)
 	{
@@ -158,11 +154,11 @@ void loop() {
 	{
 		if (mills_ftt % 10 < 5)
 		{
-			Show_anim(mills_ftt / 60, 1, ANIMATION);
+			Show_anim(mills_ftt / 60 - 1, 1, ANIMATION);
 		}
 		else 
 		{
-			Show_anim(mills_ftt / 60, 2, ANIMATION);
+			Show_anim(mills_ftt / 60 - 1, 2, ANIMATION);
 		}
 	}
 
@@ -195,33 +191,50 @@ void loop() {
 	if (first_tap_btn_flag && !ignition)
 	{
 		ignition = true;
-		digitalWrite(HIGH_VOLTAGE, HIGH);
 		digitalWrite(FILAMENT, HIGH);
+		digitalWrite(HIGH_VOLTAGE, HIGH);
 	}
 	//showing time
-	if (first_tap_btn_flag && !second_tap_btn_flag  && !has_shown && mills_ftt > WF_SECOND_TAP)
+	if (first_tap_btn_flag && !second_tap_btn_flag && !has_shown && mills_ftt > WF_SECOND_TAP)
 	{
 		Show_time();
-		first_tap_btn_flag = false;
+		//first_tap_btn_flag = false;
 		has_shown = true;
-		allow_secon_tap = false;
+		//allow_secon_tap = false;
 	}
 	//showing data
 	if (first_tap_btn_flag && second_tap_btn_flag && !has_shown && mills_ftt > WF_SECOND_TAP)
 	{
 		Show_temperature();
-		first_tap_btn_flag = false;
+		
 		has_shown = true;
-		allow_secon_tap = false;
+		
 		second_tap_btn_flag = false;
 	}
-	//turning off power
-	if (has_shown && ignition)
+	//showing closing animation
+	if (has_shown && mills_ftt > 2800 && mills_ftt < 3400)
 	{
+		if (mills_ftt % 10 < 5)
+		{
+			Show_anim(8 - (mills_ftt - 2800) / 60, 1, ANIMATION);
+		}
+		else
+		{
+			Show_anim(8 - (mills_ftt - 2800) / 60, 2, ANIMATION);
+		}
+		//Serial.println(mills_ftt);
+	}
+	//turning off power
+	if (has_shown && ignition && mills_ftt > 3400)
+	{
+		allow_secon_tap = false;
+		first_tap_btn_flag = false;
+
 		has_shown = false;
 		ignition = false;
 		digitalWrite(HIGH_VOLTAGE, LOW);
 		digitalWrite(FILAMENT, LOW);
+		delay(30);
 		for (byte i = 0; i < 10; i++) //вырубаем все выводы, чтобы не тратить энергию
 		{
 			if(i != 2)digitalWrite(i, LOW);
@@ -255,7 +268,7 @@ void Show_temperature() {
 	{
 		Show_symb(tt1, tt2, 0);
 	}
-	Show_symb(16, 16 , 0);
+	//Show_symb(16, 16 , 0);
 }
 
 void Show_time() {
@@ -267,15 +280,15 @@ void Show_time() {
 	{
 		Show_symb(tt1, tt2, 2);
 	}
-	Show_symb(16, 16 , 0);
 	tt1 = clock.minutes / 10;
 	tt2 = clock.minutes % 10;
+	Show_symb(16, 16 , 0);
 	//delay(300);
 	while (millis() - fst_tap_time < 2800)
 	{
 		Show_symb(tt1, tt2, 1);
 	}
-	Show_symb(16, 16, 0);
+	//Show_symb(16, 16, 0);
 }
 
 void Show_anim(byte frame, byte lamp, byte anim) {
@@ -297,6 +310,7 @@ void Show_anim(byte frame, byte lamp, byte anim) {
 	{
 		digitalWrite(i,HIGH);
 	}
+	digitalWrite(13, HIGH);
 	if(seg[1]!=0){digitalWrite(seg[1]+1,LOW);}  //включаем нужные 3
 	if(seg[2]!=0){digitalWrite(seg[2]+1,LOW);}
 	if(seg[0]!=0){digitalWrite(seg[0]+1,LOW);}
@@ -308,9 +322,7 @@ void Show_symb(byte symbol_write_1, byte symbol_write_2, byte dot) {
 	if (dot == 1)
 	{
 		digitalWrite(13, LOW);
-	}
-	else
-	{
+	}	else	{
 		digitalWrite(13, HIGH);
 	}
 	for (short i = 3; i < 10; i++){
@@ -321,9 +333,7 @@ void Show_symb(byte symbol_write_1, byte symbol_write_2, byte dot) {
 		delayMicroseconds(50 * Brightness_conv());
 		digitalWrite(MESH1, HIGH);
 		delayMicroseconds(50 * (100 - Brightness_conv()));
-	}
-	else
-	{
+	}	else	{
 		delay(5);
 	}
 
@@ -352,13 +362,6 @@ void Show_symb(byte symbol_write_1, byte symbol_write_2, byte dot) {
 	}
 	//Serial.println(Brightness_conv());
 }
-
-//void Show_dots(bool show){
-//	
-//	digitalWrite(13, !show);
-//	digitalWrite(0, !show);
-//	digitalWrite(1, !show);
-//}
 
 short Brightness_conv() {
 	short active_time = analogRead(LIGHT_SENSOR);
