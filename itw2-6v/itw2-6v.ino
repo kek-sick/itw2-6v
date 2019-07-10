@@ -36,27 +36,27 @@ volatile bool btn_flag = false;
 //byte ty_pidor[] = {10,13,16,11,1,12,0,15};
 //byte hyi[] = {17,13,1,16};
 
-bool symb[][8] = {
-	{1,1,1,0,1,1,1}, // 0
-	{1,1,0,0,0,0,0}, // 1
-	{0,1,1,1,0,1,1}, // 2
-	{1,1,1,1,0,0,1}, // 3
-	{1,1,0,1,1,0,0}, // 4
-	{1,0,1,1,1,0,1}, // 5
-	{1,0,1,1,1,1,1}, // 6
-	{1,1,1,0,0,0,0}, // 7
-	{1,1,1,1,1,1,1}, // 8
-	{1,1,1,1,1,0,1}, // 9
-	{0,0,0,1,1,1,1}, // t  10
-	{0,1,1,1,1,1,0}, // p  11
-	{1,1,0,1,0,1,1}, // d  12
-	{1,1,0,1,1,0,1}, // y  13
-	{1,0,0,1,0,1,1}, // o  14
-	{0,0,0,1,0,1,0}, // r  15
-	{0,0,0,0,0,0,0}, // space  16
-	{1,1,0,1,1,1,0}, // H  17
-	//{0,0,0,0,0,0,0}, // dots 18
-	{0,1,1,1,1,0,0} // o (upper) 18
+byte symb[] = {
+	B01110111, // 0
+	B01100000, // 1
+	B00111011, // 2
+	B01111001, // 3
+	B01101100, // 4
+	B01011101, // 5
+	B01011111, // 6
+	B01110000, // 7
+	B01111111, // 8
+	B01111101, // 9
+	B00001111, // t  10
+	B00111110, // p  11
+	B01101011, // d  12
+	B01101101, // y  13
+	B01001011, // o  14
+	B00001010, // r  15
+	B00000000, // space  16
+	B01101110, // H  17
+	B10000000, // dots 18
+	B00111100 // o (upper) 19
 };
 //anim 1
 byte animation1[2][11] = {
@@ -247,39 +247,35 @@ void Show_temperature() {
 	byte tt1, tt2;
 	tt1 = temperature / 10;
 	tt2 = temperature % 10;
-	Show_dots(0);
 	while (millis() - fst_tap_time < 1500)
 	{
-		Show_symb(10, 18);
+		Show_symb(10, 19, 0);
 	}
 	while (millis() - fst_tap_time < 2800)
 	{
-		Show_symb(tt1, tt2);
+		Show_symb(tt1, tt2, 0);
 	}
-	Show_symb(16, 16);
+	Show_symb(16, 16 , 0);
 }
 
 void Show_time() {
 	clock.begin();
-	Show_dots(0);
 	byte  tt1,tt2;
 	tt1 = clock.Hours / 10;
 	tt2 = clock.Hours % 10;
 	while (millis() - fst_tap_time < 1500)
 	{
-		Show_symb(tt1, tt2);
+		Show_symb(tt1, tt2, 2);
 	}
-	Show_symb(16, 16);
-	Show_dots(1);
+	Show_symb(16, 16 , 0);
 	tt1 = clock.minutes / 10;
 	tt2 = clock.minutes % 10;
-	delay(300);
-	Show_dots(0);
+	//delay(300);
 	while (millis() - fst_tap_time < 2800)
 	{
-		Show_symb(tt1, tt2);
+		Show_symb(tt1, tt2, 1);
 	}
-	Show_symb(16, 16);
+	Show_symb(16, 16, 0);
 }
 
 void Show_anim(byte frame, byte lamp, byte anim) {
@@ -306,10 +302,20 @@ void Show_anim(byte frame, byte lamp, byte anim) {
 	if(seg[0]!=0){digitalWrite(seg[0]+1,LOW);}
 }
 
-void Show_symb(byte symbol_write_1, byte symbol_write_2) {
+void Show_symb(byte symbol_write_1, byte symbol_write_2, byte dot) {
 	Lamp(1);
+	byte temp = B01000000;
+	if (dot == 1)
+	{
+		digitalWrite(13, LOW);
+	}
+	else
+	{
+		digitalWrite(13, HIGH);
+	}
 	for (short i = 3; i < 10; i++){
-		digitalWrite(i, !symb[symbol_write_1][i - 3]);
+		digitalWrite(i, !(symb[symbol_write_1] & temp));
+		temp = temp >> 1;
 	}
 	if (LS_ENABLE) {
 		delayMicroseconds(50 * Brightness_conv());
@@ -320,9 +326,20 @@ void Show_symb(byte symbol_write_1, byte symbol_write_2) {
 	{
 		delay(5);
 	}
+
 	Lamp(2);
+	temp = B01000000;
+	if (dot == 2)
+	{
+		digitalWrite(13, LOW);
+	}
+	else
+	{
+		digitalWrite(13, HIGH);
+	}
 	for (short j = 3; j < 10; j++) {
-		digitalWrite(j, !symb[symbol_write_2][j - 3]);
+		digitalWrite(j, !(symb[symbol_write_2] & temp));
+		temp = temp >> 1;
 	}
 	if (LS_ENABLE) {
 		delayMicroseconds(50 * Brightness_conv());
@@ -336,12 +353,12 @@ void Show_symb(byte symbol_write_1, byte symbol_write_2) {
 	//Serial.println(Brightness_conv());
 }
 
-void Show_dots(bool show){
-	
-	digitalWrite(13, !show);
-	digitalWrite(0, !show);
-	digitalWrite(1, !show);
-}
+//void Show_dots(bool show){
+//	
+//	digitalWrite(13, !show);
+//	digitalWrite(0, !show);
+//	digitalWrite(1, !show);
+//}
 
 short Brightness_conv() {
 	short active_time = analogRead(LIGHT_SENSOR);
