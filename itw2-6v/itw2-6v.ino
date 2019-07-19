@@ -22,16 +22,27 @@ void Lamp(byte);
 void Show_symb(byte, byte);
 //void show_r_strg(byte*);
 
-unsigned long time = 0, fst_tap_time = 0, GetTemp_time = 0, mills_ftt = 0;
+unsigned long  
+	fst_tap_time = 0, 
+	GetTemp_time = 0, 
+	mills_ftt = 0, 
+	timeSet_mode_init_time = 0,
+	timeSet_mode_time = 0;
 byte a = 0,temperature = 0;
+byte time_set_btn = 0,
+	last_time_set_btn = 0,
+	current_min = 0,
+	current_hour = 0;
+
 bool first_tap_btn_flag = false,	//if one tap happened
 	second_tap_btn_flag = false,	//if two taps hepptned
 	allow_secon_tap = false,		//if TRUE then second tap can be detected
 	mercury_btn_flag = false,		//TRUE if btn parcer detected high value
 	ignition = false,				//TRUE when power lines are active
+	has_timeSet_shown = false,
 	has_shown = false;				//TRUE when showing func has done
 volatile short btn_type = 0;
-volatile bool btn_flag = false;
+volatile bool time_set_btn_flag = false, btn_flag = false;
 	
 //byte ty_pidor[] = {10,13,16,11,1,12,0,15};
 //byte hyi[] = {17,13,1,16};
@@ -86,6 +97,10 @@ void Btn_detect() {
 	{
 		btn_flag = false;
 	}
+	if (btn_type > 700)
+	{
+		time_set_btn_flag = false;
+	}
 }
 
 //void Btn_release() {
@@ -126,7 +141,6 @@ void setup() {
 	//show_s(16, 16);    //off all segments
 	//time = millis();
 	//Serial.begin(9600);
-	//Serial.println(clock.minutes);
 }
 
 // the loop function runs over and over again until power down or reset
@@ -143,14 +157,75 @@ void loop() {
 	if (btn_flag)
 	{
 		//Serial.println(analogRead(BTN_DETECT));
-		if (btn_type > 630 && btn_type < 640)mercury_btn_flag = true;
+		if (btn_type > 610 && btn_type < 660)mercury_btn_flag = true;
+		if (btn_type > 770 && btn_type < 810)time_set_btn = 1;	//hours
+		if (btn_type > 950)time_set_btn = 2;					//minutes
 	}
 	else
 	{
+		//time_set_btn = 0;
 		mercury_btn_flag = false;
 	}
 
-	if (mills_ftt < WF_SECOND_TAP)  //показываем анимацию
+	timeSet_mode_time = millis() - timeSet_mode_init_time;
+
+	if (time_set_btn > 0 && !time_set_btn_flag)		//restart time set mod timer on every button hit
+	{
+		time_set_btn_flag = true;
+		has_timeSet_shown = false;
+		if (timeSet_mode_time < 6400){
+			timeSet_mode_init_time = millis() - 600;
+		}
+		else {
+			timeSet_mode_init_time = millis();
+		}
+		if (time_set_btn == last_time_set_btn)		//incrementing time
+		{
+			if (time_set_btn == 1) { current_hour++; }
+			else { current_min++; }
+			if (current_hour == 24)current_hour = 0;
+			if (current_min == 60)current_min = 0;
+		}
+		if (time_set_btn != last_time_set_btn)		//changing the displayimg time
+		{
+			clock.begin();							//getting time
+			clock.settime(0, current_min, current_hour);				//saving time				
+			current_hour = clock.Hours;
+			current_min = clock.minutes;
+		}
+
+		last_time_set_btn = time_set_btn;			//setting last time button
+		
+	}
+
+	/*Serial.println(timeSet_mode_time);
+	Serial.println(time_set_btn);
+	Serial.println(ignition);
+	Serial.println(has_timeSet_shown);
+	Serial.println("----");*/
+
+	if (time_set_btn != 0 && timeSet_mode_time >= 6400 && !has_timeSet_shown)		//saving time
+	{
+		clock.begin();
+		clock.settime(0, current_min, current_hour);
+		time_set_btn = 0;
+		last_time_set_btn = 0;
+		has_timeSet_shown = true;
+	}
+
+	if (time_set_btn != 0 && timeSet_mode_time > WF_SECOND_TAP && timeSet_mode_time < 6400)
+	{
+		if (time_set_btn == 1)
+		{
+			Show_timeSet(current_hour, time_set_btn);
+		}
+		else
+		{
+			Show_timeSet(current_min, time_set_btn);
+		}
+	}
+
+	if (mills_ftt < WF_SECOND_TAP)   //показываем анимацию
 	{
 		if (mills_ftt % 10 < 5)
 		{
@@ -159,6 +234,18 @@ void loop() {
 		else 
 		{
 			Show_anim(mills_ftt / 60 - 1, 2, ANIMATION);
+		}
+	}
+
+	if (timeSet_mode_time < WF_SECOND_TAP)
+	{
+		if (timeSet_mode_time % 10 < 5)
+		{
+			Show_anim(timeSet_mode_time / 60 - 1, 1, ANIMATION);
+		}
+		else
+		{
+			Show_anim(timeSet_mode_time / 60 - 1, 2, ANIMATION);
 		}
 	}
 
@@ -188,7 +275,7 @@ void loop() {
 	}
 
 	//включение силовых линий
-	if (first_tap_btn_flag && !ignition)
+	if ((time_set_btn != 0 || first_tap_btn_flag) && !ignition)
 	{
 		ignition = true;
 		digitalWrite(FILAMENT, HIGH);
@@ -212,25 +299,41 @@ void loop() {
 		second_tap_btn_flag = false;
 	}
 	//showing closing animation
-	if (has_shown && mills_ftt > 2800 && mills_ftt < 3400)
+	if ((has_shown && mills_ftt > 2800 && mills_ftt < 3400) || (timeSet_mode_time > 6400 && timeSet_mode_time < 7000 && has_timeSet_shown))
 	{
-		if (mills_ftt % 10 < 5)
+		if (has_timeSet_shown)
 		{
-			Show_anim(8 - (mills_ftt - 2800) / 60, 1, ANIMATION);
+			if (timeSet_mode_time % 10 < 5)
+			{
+				Show_anim(8 - (timeSet_mode_time - 6400) / 60, 1, ANIMATION);
+			}
+			else
+			{
+				Show_anim(8 - (timeSet_mode_time - 6400) / 60, 2, ANIMATION);
+			}
 		}
 		else
 		{
-			Show_anim(8 - (mills_ftt - 2800) / 60, 2, ANIMATION);
+			if (mills_ftt % 10 < 5)
+			{
+				Show_anim(8 - (mills_ftt - 2800) / 60, 1, ANIMATION);
+			}
+			else
+			{
+				Show_anim(8 - (mills_ftt - 2800) / 60, 2, ANIMATION);
+			}
 		}
+		
 		//Serial.println(mills_ftt);
 	}
 	//turning off power
-	if (has_shown && ignition && mills_ftt > 3400)
+	if (ignition && (has_shown && mills_ftt > 3400 || timeSet_mode_time > 7000 && has_timeSet_shown))
 	{
 		allow_secon_tap = false;
 		first_tap_btn_flag = false;
 
 		has_shown = false;
+		has_timeSet_shown = false;
 		ignition = false;
 		digitalWrite(HIGH_VOLTAGE, LOW);
 		digitalWrite(FILAMENT, LOW);
@@ -253,6 +356,20 @@ void Lamp(byte lamp) {
 	{
 		digitalWrite(MESH1, HIGH);
 		digitalWrite(MESH2, LOW);
+	}
+}
+
+void Show_timeSet(byte time, byte time_type) {
+	byte time1, time2;
+	time1 = time / 10;
+	time2 = time % 10;
+	if (timeSet_mode_time % 1000 < 500)
+	{
+		Show_symb(time1, time2, 3 - time_type);
+	}
+	else
+	{
+		Show_symb(time1, time2, 0);
 	}
 }
 
