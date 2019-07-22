@@ -189,7 +189,7 @@ void loop() {
 		if (time_set_btn != last_time_set_btn)		//changing the displayimg time
 		{
 			clock.begin();							//getting time
-			clock.settime(0, current_min, current_hour);				//saving time				
+			if(last_time_set_btn != 0) clock.settime(0, current_min, current_hour);				//saving time				
 			current_hour = clock.Hours;
 			current_min = clock.minutes;
 		}
