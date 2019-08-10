@@ -4,6 +4,7 @@
  Author:	Ilya
 */
 #include <iarduino_RTC.h>
+#include <avr/sleep.h>
 #define MESH1 0
 #define MESH2 1
 #define HIGH_VOLTAGE A3
@@ -141,6 +142,8 @@ void setup() {
 	//show_s(16, 16);    //off all segments
 	//time = millis();
 	//Serial.begin(9600);
+	set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+	sleep_mode();
 }
 
 // the loop function runs over and over again until power down or reset
@@ -158,7 +161,7 @@ void loop() {
 	{
 		//Serial.println(analogRead(BTN_DETECT));
 		if (btn_type > 610 && btn_type < 660)mercury_btn_flag = true;
-		if (btn_type > 770 && btn_type < 810)time_set_btn = 1;	//hours
+		if (btn_type > 740 && btn_type < 810)time_set_btn = 1;	//hours
 		if (btn_type > 950)time_set_btn = 2;					//minutes
 	}
 	else
@@ -195,7 +198,6 @@ void loop() {
 		}
 
 		last_time_set_btn = time_set_btn;			//setting last time button
-		
 	}
 
 	/*Serial.println(timeSet_mode_time);
@@ -250,7 +252,7 @@ void loop() {
 	}
 
 	//first tap detection
-	if (mercury_btn_flag && !first_tap_btn_flag)
+	if (mercury_btn_flag && !first_tap_btn_flag && time_set_btn == 0)
 	{
 		first_tap_btn_flag = true;
 		fst_tap_time = millis();
@@ -343,6 +345,8 @@ void loop() {
 			if(i != 2)digitalWrite(i, LOW);
 		}
 		digitalWrite(13, LOW);
+		set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+		sleep_mode();
 	}
 }
 
@@ -363,7 +367,7 @@ void Show_timeSet(byte time, byte time_type) {
 	byte time1, time2;
 	time1 = time / 10;
 	time2 = time % 10;
-	if (timeSet_mode_time % 1000 < 500)
+	if (millis() % 1000 < 500)
 	{
 		Show_symb(time1, time2, 3 - time_type);
 	}
