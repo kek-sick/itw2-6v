@@ -14,7 +14,7 @@
 #define MERCURY 2			
 #define WF_SECOND_TAP 600   //время окончания ожидания второго тапа
 #define WF_DEBOUNCE 300		//время окончания ожидания дребезга переключателя
-#define LS_ENABLE 1			//Light Sensor Enable
+#define LS_ENABLE 0		//Light Sensor Enable
 #define ANIMATION 2
 
 iarduino_RTC clock(RTC_DS1307);
@@ -68,7 +68,7 @@ byte symb[] = {
 	B00000000, // space  16
 	B01101110, // H  17
 	B10000000, // dots 18
-	B00111100 // o (upper) 19
+	B00111100 // O (upper) 19
 };
 //anim 1
 byte animation1[2][11] = {
