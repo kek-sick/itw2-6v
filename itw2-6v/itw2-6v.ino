@@ -10,11 +10,12 @@
 #define HIGH_VOLTAGE A3
 #define FILAMENT A2
 #define BTN_DETECT A1
-#define LIGHT_SENSOR A7
+#define BATTERY A6
+//#define LIGHT_SENSOR A7
 #define MERCURY 2			
 #define WF_SECOND_TAP 600   //время окончания ожидания второго тапа
 #define WF_DEBOUNCE 300		//время окончания ожидания дребезга переключателя
-#define LS_ENABLE 0		//Light Sensor Enable
+//#define LS_ENABLE 0		//Light Sensor Enable
 #define ANIMATION 2
 
 iarduino_RTC clock(RTC_DS1307);
@@ -60,9 +61,9 @@ byte symb[] = {
 	B01111111, // 8
 	B01111101, // 9
 	B00001111, // t  10
-	B00111110, // p  11
-	B01101011, // d  12
-	B01101101, // y  13
+	B01001111, // b  11
+	B01111110, // a  12
+	B00011111, // E  13
 	B01001011, // o  14
 	B00001010, // r  15
 	B00000000, // space  16
@@ -118,6 +119,7 @@ void setup() {
 	pinMode(MESH2, OUTPUT);
 	pinMode(MERCURY, INPUT);
 	pinMode(BTN_DETECT, INPUT);
+	pinMode(BATTERY, INPUT);
 	pinMode(3, OUTPUT);
 	pinMode(4, OUTPUT);
 	pinMode(5, OUTPUT);
@@ -128,7 +130,7 @@ void setup() {
 	pinMode(13, OUTPUT);			 //dots
 	pinMode(HIGH_VOLTAGE, OUTPUT);
 	pinMode(FILAMENT, OUTPUT);
-	pinMode(LIGHT_SENSOR, INPUT);
+	//pinMode(LIGHT_SENSOR, INPUT);
 
 	attachInterrupt(0, Btn_detect, CHANGE);
 
@@ -257,7 +259,6 @@ void loop() {
 		first_tap_btn_flag = true;
 		fst_tap_time = millis();
 		//show_time = fst_tap_time;
-		temperature = GetTemp();
 		//interrupts();
 		//attachInterrupt(0, Btn_release, FALLING);
 	}
@@ -294,7 +295,7 @@ void loop() {
 	//showing data
 	if (first_tap_btn_flag && second_tap_btn_flag && !has_shown && mills_ftt > WF_SECOND_TAP)
 	{
-		Show_temperature();
+		Show_battary();
 		
 		has_shown = true;
 		
@@ -377,19 +378,36 @@ void Show_timeSet(byte time, byte time_type) {
 	}
 }
 
-void Show_temperature() {
-	byte tt1, tt2;
-	tt1 = temperature / 10;
-	tt2 = temperature % 10;
+//void Show_temperature() {
+//	byte tt1, tt2, t;
+//	t = GetTemp();
+//	if (t > 99)t = 99;
+//	tt1 = t / 10;
+//	tt2 = t % 10;
+//
+//	while (millis() - fst_tap_time < 1500)
+//	{
+//		Show_symb(10, 19, 0);
+//	}
+//	while (millis() - fst_tap_time < 2800)
+//	{
+//		Show_symb(tt1, tt2, 0);
+//	}
+//}
+
+void Show_battary() {
+	byte b1, b2;
+	int bat = analogRead(BATTERY)* 0.04883;
+	b1 = bat / 10;
+	b2 = bat % 10;
 	while (millis() - fst_tap_time < 1500)
 	{
-		Show_symb(10, 19, 0);
+		Show_symb(11, 12, 0);
 	}
 	while (millis() - fst_tap_time < 2800)
 	{
-		Show_symb(tt1, tt2, 0);
+		Show_symb(b1, b2, 0);
 	}
-	//Show_symb(16, 16 , 0);
 }
 
 void Show_time() {
@@ -450,13 +468,8 @@ void Show_symb(byte symbol_write_1, byte symbol_write_2, byte dot) {
 		digitalWrite(i, !(symb[symbol_write_1] & temp));
 		temp = temp >> 1;
 	}
-	if (LS_ENABLE) {
-		delayMicroseconds(50 * Brightness_conv());
-		digitalWrite(MESH1, HIGH);
-		delayMicroseconds(50 * (100 - Brightness_conv()));
-	}	else	{
-		delay(5);
-	}
+	delay(5);
+	
 
 	Lamp(2);
 	temp = B01000000;
@@ -472,24 +485,15 @@ void Show_symb(byte symbol_write_1, byte symbol_write_2, byte dot) {
 		digitalWrite(j, !(symb[symbol_write_2] & temp));
 		temp = temp >> 1;
 	}
-	if (LS_ENABLE) {
-		delayMicroseconds(50 * Brightness_conv());
-		digitalWrite(MESH2, HIGH);
-		delayMicroseconds(50 * (100 - Brightness_conv()));
-	}
-	else
-	{
-		delay(5);
-	}
-	//Serial.println(Brightness_conv());
+	delay(5);
 }
 
-short Brightness_conv() {
+/*short Brightness_conv() {
 	short active_time = analogRead(LIGHT_SENSOR);
 	if (active_time > 120)return 100;
 	if (active_time < 42)return 2;
 	return (active_time-40)*1.2;
-}
+}*/
 
 /*void show_r_strg(byte* strg) {
 	for (byte i = 0; i <=sizeof(strg); i++){
@@ -506,7 +510,7 @@ byte GetTemp(void)
 		double t;
 		ADMUX = (_BV(REFS1) | _BV(REFS0) | _BV(MUX3));
 		ADCSRA |= _BV(ADEN);  // enable the ADC
-		delay(20);            // wait for voltages to become stable.
+		delay(60);            // wait for voltages to become stable.
 		ADCSRA |= _BV(ADSC);  // Start the ADC
 		// Detect end-of-conversion
 		while (bit_is_set(ADCSRA, ADSC));
