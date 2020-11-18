@@ -51,25 +51,25 @@ volatile bool time_set_btn_flag = false, btn_flag = false;
 
 byte symb[] = {
 	B01110111, // 0
-	B01100000, // 1
-	B00111011, // 2
-	B01111001, // 3
-	B01101100, // 4
+	B00110000, // 1
+	B01101110, // 2
+	B01111100, // 3
+	B00111001, // 4
 	B01011101, // 5
 	B01011111, // 6
 	B01110000, // 7
 	B01111111, // 8
 	B01111101, // 9
 	B00001111, // t  10
-	B01001111, // b  11
-	B01111110, // a  12
-	B00011111, // E  13
-	B01001011, // o  14
+	B00011111, // b  11
+	B01111011, // a  12
+	B01001111, // E  13
+	B00011110, // o  14
 	B00001010, // r  15
 	B00000000, // space  16
-	B01101110, // H  17
+	B00111011, // H  17
 	B10000000, // dots 18
-	B00111100 // O (upper) 19
+	B01101001 // O (upper) 19
 };
 //anim 1
 byte animation1[2][11] = {
@@ -79,14 +79,21 @@ byte animation1[2][11] = {
 
 //anim 2
 byte animation2[2][11] = {
-	{0,0,3,4,6,5,2,8,7,0,0},
-	{0,0,7,8,2,5,6,4,3,0,0}
+	{0,0,3,2,8,5,4,6,7,0,0},
+	{0,0,7,6,4,5,8,2,3,0,0}
 };
 
 byte animation3[2][11] = {
 	{0,0,3,2,4,5,8,6,7,0,0},
 	{0,0,7,6,8,5,4,2,3,0,0}
 };
+
+byte charge[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 7, 7, 7, 8, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 16, 17, 17, 18, 18,
+19, 20, 21, 22, 23, 23, 24, 24, 25, 25, 26, 27, 27, 28, 28, 29, 29, 30, 30, 31, 32, 33, 33, 34, 34, 35, 35, 36, 36, 37, 37, 38, 38, 39, 39, 40, 41, 42,
+42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 74, 75, 76, 77, 77,
+78, 79, 80, 80, 81, 82, 82, 83, 84, 84, 85, 86, 86, 87, 88, 88, 89, 89, 90, 90, 91, 91, 92, 92, 93, 93, 94, 94, 95, 95, 96, 96, 96, 97, 97, 97, 97, 98,
+98, 98, 98, 98, 98, 99, 99, 99, 99, 99, 99, 99, 99};
 
 void Btn_detect() {
 	btn_type = analogRead(BTN_DETECT);
@@ -397,7 +404,17 @@ void Show_timeSet(byte time, byte time_type) {
 
 void Show_battary() {
 	byte b1, b2;
-	int bat = analogRead(BATTERY)* 0.04883;
+	//int bat =  analogRead(BATTERY)*0.0489;
+	int bat = analogRead(BATTERY);
+	if (bat > 829 || bat < 614) 
+	{ 
+		if (bat < 614) { bat = 1; }
+		if (bat >= 829) { bat = 99; }
+	}
+	else
+	{
+		bat = charge[bat-614];
+	}
 	b1 = bat / 10;
 	b2 = bat % 10;
 	while (millis() - fst_tap_time < 1500)
@@ -504,20 +521,20 @@ void Show_symb(byte symbol_write_1, byte symbol_write_2, byte dot) {
 	}
 }*/
 
-byte GetTemp(void)
-{
-		unsigned int wADC;
-		double t;
-		ADMUX = (_BV(REFS1) | _BV(REFS0) | _BV(MUX3));
-		ADCSRA |= _BV(ADEN);  // enable the ADC
-		delay(60);            // wait for voltages to become stable.
-		ADCSRA |= _BV(ADSC);  // Start the ADC
-		// Detect end-of-conversion
-		while (bit_is_set(ADCSRA, ADSC));
-		// Reading register "ADCW" takes care of how to read ADCL and ADCH.
-		wADC = ADCW;
-		// The offset of 324.31 could be wrong. It is just an indication.
-		t = (wADC - 324.31) / 1.22;
-		// The returned temperature is in degrees Celsius.
-		return (byte(t));
-}
+//byte GetTemp(void)
+//{
+//		unsigned int wADC;
+//		double t;
+//		ADMUX = (_BV(REFS1) | _BV(REFS0) | _BV(MUX3));
+//		ADCSRA |= _BV(ADEN);  // enable the ADC
+//		delay(60);            // wait for voltages to become stable.
+//		ADCSRA |= _BV(ADSC);  // Start the ADC
+//		// Detect end-of-conversion
+//		while (bit_is_set(ADCSRA, ADSC));
+//		// Reading register "ADCW" takes care of how to read ADCL and ADCH.
+//		wADC = ADCW;
+//		// The offset of 324.31 could be wrong. It is just an indication.
+//		t = (wADC - 324.31) / 1.22;
+//		// The returned temperature is in degrees Celsius.
+//		return (byte(t));
+//}
