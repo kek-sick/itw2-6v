@@ -5,8 +5,8 @@
 */
 #include <iarduino_RTC.h>
 #include <avr/sleep.h>
-#define MESH1 0
-#define MESH2 1
+#define MESH1 1
+#define MESH2 0
 #define HIGH_VOLTAGE A3
 #define FILAMENT A2
 #define BTN_DETECT A1
@@ -51,25 +51,25 @@ volatile bool time_set_btn_flag = false, btn_flag = false;
 
 byte symb[] = {
 	B01110111, // 0
-	B01100000, // 1
-	B00111011, // 2
-	B01111001, // 3
-	B01101100, // 4
+	B00110000, // 1
+	B01101110, // 2
+	B01111100, // 3
+	B00111001, // 4
 	B01011101, // 5
 	B01011111, // 6
 	B01110000, // 7
 	B01111111, // 8
 	B01111101, // 9
 	B00001111, // t  10
-	B01001111, // b  11
-	B01111110, // a  12
-	B00011111, // E  13
-	B01001011, // o  14
+	B00011111, // b  11
+	B01111011, // a  12
+	B01001111, // E  13
+	B00011110, // o  14
 	B00001010, // r  15
 	B00000000, // space  16
-	B01101110, // H  17
+	B00111011, // H  17
 	B10000000, // dots 18
-	B00111100 // O (upper) 19
+	B01101001 // O (upper) 19
 };
 //anim 1
 byte animation1[2][11] = {
