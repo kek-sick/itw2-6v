@@ -3,6 +3,8 @@
  Created:	24.01.2019 20:47:13
  Author:	Ilya
 */
+
+//version 1.0
 #include <iarduino_RTC.h>
 #include <avr/sleep.h>
 #define MESH1 1
