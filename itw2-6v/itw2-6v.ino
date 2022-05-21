@@ -9,9 +9,10 @@
 #include <avr/sleep.h>
 #define MESH1 1
 #define MESH2 0
-#define HIGH_VOLTAGE A3
-#define FILAMENT A2
+#define POWER_ON A2
+//#define FILAMENT A2
 #define BTN_DETECT A1
+#define BTN_T_SET_INT 3
 #define BATTERY A6
 //#define LIGHT_SENSOR A7
 #define MERCURY 2			
@@ -98,7 +99,16 @@ byte charge[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 
 98, 98, 98, 98, 98, 99, 99, 99, 99, 99, 99, 99, 99};
 
 void Btn_detect() {
-	btn_type = analogRead(BTN_DETECT);
+	bool merq_pressed;
+	merq_pressed = digitalRead(MERCURY);
+	if (merq_pressed)
+	{
+		btn_type = 650;
+	}
+	else {
+		btn_type = 0;
+	}
+	//btn_type = analogRead(BTN_DETECT);
 	if (btn_type > 600)
 	{
 		btn_flag = true;
@@ -129,21 +139,21 @@ void setup() {
 	pinMode(MERCURY, INPUT);
 	pinMode(BTN_DETECT, INPUT);
 	pinMode(BATTERY, INPUT);
-	pinMode(3, OUTPUT);
 	pinMode(4, OUTPUT);
 	pinMode(5, OUTPUT);
 	pinMode(6, OUTPUT);
 	pinMode(7, OUTPUT);
 	pinMode(8, OUTPUT);
 	pinMode(9, OUTPUT);
+	pinMode(10, OUTPUT);
 	pinMode(13, OUTPUT);			 //dots
-	pinMode(HIGH_VOLTAGE, OUTPUT);
-	pinMode(FILAMENT, OUTPUT);
+	pinMode(POWER_ON, OUTPUT);
+	pinMode(BTN_T_SET_INT, INPUT);
 	//pinMode(LIGHT_SENSOR, INPUT);
 
-	attachInterrupt(0, Btn_detect, CHANGE);
+	attachInterrupt(1, Btn_detect, CHANGE);
 
-	for (byte i = 0; i < 10; i++) //вырубаем все выводы, чтобы не тратить энергию
+	for (byte i = 0; i < 11; i++) //вырубаем все выводы, чтобы не тратить энергию
 	{
 		if (i != 2)digitalWrite(i, LOW);
 	}
@@ -290,8 +300,7 @@ void loop() {
 	if ((time_set_btn != 0 || first_tap_btn_flag) && !ignition)
 	{
 		ignition = true;
-		digitalWrite(FILAMENT, HIGH);
-		digitalWrite(HIGH_VOLTAGE, HIGH);
+		digitalWrite(POWER_ON, HIGH);
 	}
 	//showing time
 	if (first_tap_btn_flag && !second_tap_btn_flag && !has_shown && mills_ftt > WF_SECOND_TAP)
@@ -347,8 +356,7 @@ void loop() {
 		has_shown = false;
 		has_timeSet_shown = false;
 		ignition = false;
-		digitalWrite(HIGH_VOLTAGE, LOW);
-		digitalWrite(FILAMENT, LOW);
+		digitalWrite(POWER_ON, LOW);
 		delay(30);
 		for (byte i = 0; i < 10; i++) //вырубаем все выводы, чтобы не тратить энергию
 		{
@@ -483,7 +491,7 @@ void Show_symb(byte symbol_write_1, byte symbol_write_2, byte dot) {
 	}	else	{
 		digitalWrite(13, HIGH);
 	}
-	for (short i = 3; i < 10; i++){
+	for (short i = 4; i < 11; i++){
 		digitalWrite(i, !(symb[symbol_write_1] & temp));
 		temp = temp >> 1;
 	}
