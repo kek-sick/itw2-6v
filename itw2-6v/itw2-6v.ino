@@ -5,11 +5,14 @@
 */
 
 //version 1.0
-#include <iarduino_RTC.h>
+#include <Wire.h>
+#include <TMP275.h>
+#include <M41T81S.h>
+//#include <iarduino_RTC.h>
 #include <avr/sleep.h>
 #define MESH1 1
 #define MESH2 0
-#define HIGH_VOLTAGE A3
+//#define HIGH_VOLTAGE A3
 #define FILAMENT A2
 #define BTN_DETECT A1
 #define BATTERY A6
@@ -20,7 +23,7 @@
 //#define LS_ENABLE 0		//Light Sensor Enable
 #define ANIMATION 2
 
-iarduino_RTC clock(RTC_DS1307);
+//iarduino_RTC rtc(RTC_DS1307);
 
 void Lamp(byte);
 void Show_symb(byte, byte);
@@ -124,6 +127,9 @@ void Btn_detect() {
 
 // the setup function runs once when you press reset or power the board
 void setup() {
+	Wire.begin();
+	rtc.init();
+
 	pinMode(MESH1, OUTPUT);
 	pinMode(MESH2, OUTPUT);
 	pinMode(MERCURY, INPUT);
@@ -137,17 +143,36 @@ void setup() {
 	pinMode(8, OUTPUT);
 	pinMode(9, OUTPUT);
 	pinMode(13, OUTPUT);			 //dots
-	pinMode(HIGH_VOLTAGE, OUTPUT);
+	//pinMode(HIGH_VOLTAGE, OUTPUT);
 	pinMode(FILAMENT, OUTPUT);
 	//pinMode(LIGHT_SENSOR, INPUT);
-
-	attachInterrupt(0, Btn_detect, CHANGE);
 
 	for (byte i = 0; i < 10; i++) //вырубаем все выводы, чтобы не тратить энергию
 	{
 		if (i != 2)digitalWrite(i, LOW);
 	}
 	digitalWrite(13, LOW);
+
+	digitalWrite(FILAMENT, HIGH);
+
+	while (millis() < 1500)
+	{
+		Show_symb(17, 1, 0);
+	}
+	while (millis() < 2800)
+	{
+		Show_symb(1, 2, 1);
+	}
+
+	digitalWrite(FILAMENT, LOW);
+
+	for (byte i = 0; i < 10; i++) //вырубаем все выводы, чтобы не тратить энергию
+	{
+		if (i != 2)digitalWrite(i, LOW);
+	}
+	digitalWrite(13, LOW);
+
+	attachInterrupt(0, Btn_detect, CHANGE);
 	//clock.begin();
 	//clock.settime(0, 57, 23, 1, 7, 19, 1);
 	//show_s(16, 16);    //off all segments
@@ -159,15 +184,7 @@ void setup() {
 
 // the loop function runs over and over again until power down or reset
 void loop() {
-	/*if (millis() - time >40)
-	{
-		time = millis();
-		a++;
-		if (a > 9) { a = 0; b++; }
-		if (b > 9)b = 0;	
-	}
-	show_s(b, a);*/
-	
+		
 	if (btn_flag)
 	{
 		//Serial.println(analogRead(BTN_DETECT));
@@ -202,10 +219,14 @@ void loop() {
 		}
 		if (time_set_btn != last_time_set_btn)		//changing the displayimg time
 		{
-			clock.begin();							//getting time
-			if(last_time_set_btn != 0) clock.settime(0, current_min, current_hour);				//saving time				
-			current_hour = clock.Hours;
-			current_min = clock.minutes;
+			//rtc.begin();							//getting time
+			if (last_time_set_btn != 0) {			//saving time		
+				rtc.setSeconds(0);
+				rtc.setMinutes(current_min);
+				rtc.setHours(current_hour);
+			}
+			current_hour = rtc.getHours();
+			current_min = rtc.getMinutes();
 		}
 
 		last_time_set_btn = time_set_btn;			//setting last time button
@@ -219,8 +240,10 @@ void loop() {
 
 	if (time_set_btn != 0 && timeSet_mode_time >= 6400 && !has_timeSet_shown)		//saving time
 	{
-		clock.begin();
-		clock.settime(0, current_min, current_hour);
+		//rtc.begin();
+		rtc.setSeconds(0);
+		rtc.setMinutes(current_min);
+		rtc.setHours(current_hour);
 		time_set_btn = 0;
 		last_time_set_btn = 0;
 		has_timeSet_shown = true;
@@ -291,7 +314,7 @@ void loop() {
 	{
 		ignition = true;
 		digitalWrite(FILAMENT, HIGH);
-		digitalWrite(HIGH_VOLTAGE, HIGH);
+		//digitalWrite(HIGH_VOLTAGE, HIGH);
 	}
 	//showing time
 	if (first_tap_btn_flag && !second_tap_btn_flag && !has_shown && mills_ftt > WF_SECOND_TAP)
@@ -347,7 +370,7 @@ void loop() {
 		has_shown = false;
 		has_timeSet_shown = false;
 		ignition = false;
-		digitalWrite(HIGH_VOLTAGE, LOW);
+		//digitalWrite(HIGH_VOLTAGE, LOW);
 		digitalWrite(FILAMENT, LOW);
 		delay(30);
 		for (byte i = 0; i < 10; i++) //вырубаем все выводы, чтобы не тратить энергию
@@ -430,16 +453,18 @@ void Show_battary() {
 }
 
 void Show_time() {
-	clock.begin();
-	byte  tt1,tt2;
-	tt1 = clock.Hours / 10;
-	tt2 = clock.Hours % 10;
+	//rtc.begin();
+	byte  tt1,tt2, hours, minutes;
+	hours = rtc.getHours();
+	minutes = rtc.getMinutes();
+	tt1 = hours / 10;
+	tt2 = hours % 10;
 	while (millis() - fst_tap_time < 1500)
 	{
 		Show_symb(tt1, tt2, 2);
 	}
-	tt1 = clock.minutes / 10;
-	tt2 = clock.minutes % 10;
+	tt1 = minutes / 10;
+	tt2 = minutes % 10;
 	Show_symb(16, 16 , 0);
 	//delay(300);
 	while (millis() - fst_tap_time < 2800)
